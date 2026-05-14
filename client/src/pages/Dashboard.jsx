@@ -3,7 +3,7 @@ import FeatureCard from '../components/FeatureCard';
 import {
   SmilePlus, BookOpen, MessageCircle, Flower2, Wind,
   Heart, Shield, ClipboardCheck, Target, Users,
-  Phone, Sun, Moon, Sparkles, Stethoscope
+  Phone, Sun, Moon, Sparkles, Stethoscope, BarChart2
 } from 'lucide-react';
 
 const features = [
@@ -22,6 +22,7 @@ const features = [
   { icon: Moon, title: 'Sleep Tracker', description: 'Monitor your sleep patterns', path: '/sleep', color: 'sky' },
   { icon: Sparkles, title: 'Gratitude Log', description: 'Record things you are grateful for', path: '/gratitude', color: 'mint' },
   { icon: Stethoscope, title: 'Therapist Directory', description: 'Find professional therapists', path: '/therapists', color: 'lavender' },
+  { icon: BarChart2, title: 'Analytics', description: 'Mood & sleep correlation insights', path: '/analytics', color: 'sky' },
 ];
 
 export default function Dashboard() {

@@ -39,8 +39,17 @@ export default function GroupsPage() {
     try { await api.delete(`/groups/${id}`); setSelected(null); fetchItems(); } catch (e) { console.error(e); }
   };
 
-  const handleJoin = async (id) => {
-    try { await api.post(`/groups/${id}/join`); fetchItems(); } catch (e) { console.error(e); }
+  const handleJoin = async (item) => {
+    const id = item.id || item._id;
+    try {
+      if (item.is_member) {
+        await api.delete(`/groups/${id}/leave`);
+      } else {
+        await api.post(`/groups/${id}/join`);
+      }
+      fetchItems();
+      setSelected(prev => prev ? { ...prev, is_member: !prev.is_member } : prev);
+    } catch (e) { console.error(e); }
   };
 
   const openEdit = (item) => {
@@ -60,7 +69,9 @@ export default function GroupsPage() {
         <div className="detail-header">
           <button className="btn btn-outline btn-sm" onClick={() => setSelected(null)}><ArrowLeft size={16} /> Back</button>
           <div className="detail-actions">
-            <button className="btn btn-success btn-sm" onClick={() => handleJoin(selected.id || selected._id)}><UserPlus size={16} /> Join</button>
+            <button className={`btn ${selected.is_member ? 'btn-warning' : 'btn-success'} btn-sm`} onClick={() => handleJoin(selected)}>
+              <UserPlus size={16} /> {selected.is_member ? 'Leave' : 'Join'}
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={() => openEdit(selected)}><Edit size={16} /> Edit</button>
             <button className="btn btn-danger btn-sm" onClick={() => handleDelete(selected.id || selected._id)}><Trash2 size={16} /> Delete</button>
           </div>
@@ -95,18 +106,22 @@ export default function GroupsPage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
           {items.map(item => (
-            <div key={item.id || item._id} className="card card-clickable" onClick={() => setSelected(item)}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: 'var(--lavender-light)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
+            <div key={item.id || item._id} className="card" style={{ cursor: 'default' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--lavender-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Users size={22} color="var(--primary)" />
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '0.95rem' }}>{item.name}</h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-lighter)' }}>{item.members_count || 0} members</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 style={{ fontSize: '0.95rem', cursor: 'pointer' }} onClick={() => setSelected(item)}>{item.name}</h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-lighter)' }}>{item.member_count || item.members_count || 0} / {item.max_members} members</span>
                 </div>
+                <button
+                  className={`btn btn-sm ${item.is_member ? 'btn-outline' : 'btn-success'}`}
+                  style={{ flexShrink: 0, fontSize: '0.78rem' }}
+                  onClick={(e) => { e.stopPropagation(); handleJoin(item); }}
+                >
+                  {item.is_member ? 'Leave' : 'Join'}
+                </button>
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: 8 }}>
                 {(item.description || '').substring(0, 80)}
@@ -114,6 +129,7 @@ export default function GroupsPage() {
               <div style={{ display: 'flex', gap: 6 }}>
                 <span className="badge badge-primary">{item.category}</span>
                 {item.is_private && <span className="badge badge-warning">Private</span>}
+                {item.is_member && <span className="badge badge-success">Joined</span>}
               </div>
             </div>
           ))}

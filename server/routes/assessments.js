@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import pool from '../database.js';
 import auth from '../middleware/auth.js';
+import { parseAIJson } from '../utils/ai.js';
+import { aiLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -80,7 +82,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // POST /api/assessments/:id/take - Take an assessment and get AI feedback
-router.post('/:id/take', auth, async (req, res) => {
+router.post('/:id/take', auth, aiLimiter, async (req, res) => {
   try {
     const { answers } = req.body;
     if (!answers) return res.status(400).json({ error: 'Answers are required' });
@@ -105,7 +107,7 @@ router.post('/:id/take', auth, async (req, res) => {
       }
     }
 
-    // Get AI feedback
+    // Get AI feedback as structured JSON
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -114,36 +116,46 @@ router.post('/:id/take', auth, async (req, res) => {
         'HTTP-Referer': 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL,
+        model: 'anthropic/claude-3-5-sonnet-20241022',
         messages: [
           {
             role: 'system',
-            content: 'You are a compassionate mental health AI assistant. Provide supportive, non-diagnostic feedback on mental health assessment results. Suggest self-care strategies and encourage professional support when appropriate. Be warm and validating.'
+            content: 'You are a compassionate mental health AI assistant. Provide supportive, non-diagnostic feedback on mental health assessment results. Be warm and validating. Always return valid JSON.'
           },
           {
             role: 'user',
-            content: `I just completed the ${assessment.title}. My score was ${score} out of ${assessment.scoring_guide?.max_score || 'unknown'}. The interpretation is: ${interpretation}. Please provide supportive feedback and suggestions.`
+            content: `I completed the ${assessment.title}. My score was ${score}. Interpretation: ${interpretation}.\n\nReturn JSON: { supportive_message, score_interpretation, coping_suggestions: [], next_steps: [] }`
           }
         ]
       })
     });
 
-    const data = await response.json();
-    const ai_feedback = data.choices?.[0]?.message?.content || 'Thank you for completing this assessment. Consider discussing your results with a mental health professional.';
+    if (!response.ok) throw new Error('AI service error: ' + response.status);
 
+    const data = await response.json();
+    const rawFeedback = data.choices?.[0]?.message?.content || '';
+    const ai_feedback = parseAIJson(rawFeedback) || { raw: rawFeedback };
+
+    // Save result
     const resultInsert = await pool.query(
       'INSERT INTO assessment_results (user_id, assessment_id, answers, score, interpretation, ai_feedback) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [req.user.id, req.params.id, JSON.stringify(answers), score, interpretation, ai_feedback]
+      [req.user.id, req.params.id, JSON.stringify(answers), score, interpretation, JSON.stringify(ai_feedback)]
     );
 
-    res.status(201).json(resultInsert.rows[0]);
+    // Persist to ai_analyses
+    await pool.query(
+      'INSERT INTO ai_analyses (user_id, analysis_type, input_summary, result) VALUES ($1, $2, $3, $4)',
+      [req.user.id, 'assessment_feedback', `${assessment.title} score: ${score}`, JSON.stringify(ai_feedback)]
+    );
+
+    res.status(201).json({ ...resultInsert.rows[0], ai_feedback });
   } catch (error) {
     console.error('Take assessment error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// GET /api/assessments/results/mine - Get user's assessment results
+// GET /api/assessments/results/mine
 router.get('/results/mine', auth, async (req, res) => {
   try {
     const result = await pool.query(

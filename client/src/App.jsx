@@ -18,6 +18,9 @@ import AffirmationsPage from './pages/AffirmationsPage'
 import SleepPage from './pages/SleepPage'
 import GratitudePage from './pages/GratitudePage'
 import TherapistPage from './pages/TherapistPage'
+import AnalyticsPage from './pages/AnalyticsPage'
+import AIToolsPage from './pages/AIToolsPage'
+import IntegrationsAndCarePage from './pages/IntegrationsAndCarePage'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -61,6 +64,9 @@ function App() {
           <Route path="/sleep" element={<ProtectedRoute><SleepPage /></ProtectedRoute>} />
           <Route path="/gratitude" element={<ProtectedRoute><GratitudePage /></ProtectedRoute>} />
           <Route path="/therapists" element={<ProtectedRoute><TherapistPage /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="/ai-tools" element={<ProtectedRoute><AIToolsPage /></ProtectedRoute>} />
+          <Route path="/care-integrations" element={<ProtectedRoute><IntegrationsAndCarePage /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

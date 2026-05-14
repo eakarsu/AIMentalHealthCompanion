@@ -29,6 +29,9 @@ const navItems = [
   { icon: Users, label: 'Support Groups', path: '/groups' },
   { icon: Phone, label: 'Crisis Resources', path: '/crisis' },
   { icon: Stethoscope, label: 'Find Therapist', path: '/therapists' },
+  { section: 'Insights' },
+  { icon: Brain, label: 'Analytics', path: '/analytics' },
+  { icon: Sparkles, label: 'AI Tools', path: '/ai-tools' },
 ];
 
 export default function Sidebar() {

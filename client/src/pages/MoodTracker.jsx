@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import DetailModal from '../components/DetailModal';
 import AIResponseDisplay from '../components/AIResponseDisplay';
-import { SmilePlus, Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { SmilePlus, Plus, Edit, Trash2, ArrowLeft, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import SampleDataButtons from '../components/SampleDataButtons';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const moodLabels = ['', 'Awful', 'Bad', 'Poor', 'Low', 'Okay', 'Fair', 'Good', 'Great', 'Excellent', 'Amazing'];
 const moodColors = ['', '#DC2626', '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#10B981', '#06B6D4', '#6C63FF'];
 const factors = ['Work', 'Relationships', 'Health', 'Sleep', 'Exercise', 'Diet', 'Weather', 'Social', 'Stress', 'Finances'];
+
+const TREND_CONFIG = {
+  improving: { color: '#22c55e', Icon: TrendingUp, label: 'Improving' },
+  declining: { color: '#ef4444', Icon: TrendingDown, label: 'Declining' },
+  stable: { color: '#6b7280', Icon: Minus, label: 'Stable' },
+};
 
 export default function MoodTracker() {
   const [moods, setMoods] = useState([]);
@@ -15,6 +22,7 @@ export default function MoodTracker() {
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [trends, setTrends] = useState(null);
   const [form, setForm] = useState({ mood_score: 5, mood_label: 'Okay', factors: [], notes: '' });
 
   const fetchMoods = async () => {
@@ -25,7 +33,14 @@ export default function MoodTracker() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchMoods(); }, []);
+  const fetchTrends = async () => {
+    try {
+      const res = await api.get('/moods/trends');
+      setTrends(res.data.data || res.data);
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => { fetchMoods(); fetchTrends(); }, []);
 
   const handleScoreChange = (score) => {
     setForm(f => ({ ...f, mood_score: score, mood_label: moodLabels[score] }));
@@ -77,6 +92,8 @@ export default function MoodTracker() {
   };
 
   if (loading) return <div className="loading-container"><div className="spinner spinner-lg"></div></div>;
+
+  const trendConfig = trends ? TREND_CONFIG[trends.trend] || TREND_CONFIG.stable : null;
 
   if (selected && !showForm) {
     return (
@@ -136,6 +153,45 @@ export default function MoodTracker() {
           <Plus size={18} /> Log Mood
         </button>
       </div>
+
+      {/* Mood Trends Chart */}
+      {trends && trends.daily_averages && trends.daily_averages.length > 0 && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: '1rem' }}>30-Day Mood Trend</h3>
+            {trendConfig && (
+              <span style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: `${trendConfig.color}22`, color: trendConfig.color,
+                border: `1px solid ${trendConfig.color}44`,
+                padding: '4px 12px', borderRadius: 20, fontWeight: 600, fontSize: '0.85rem'
+              }}>
+                <trendConfig.Icon size={14} /> {trendConfig.label}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 24, marginBottom: 12, flexWrap: 'wrap' }}>
+            {trends.weekly_average != null && (
+              <div><div style={{ fontSize: '0.75rem', color: 'var(--text-lighter)' }}>30-DAY AVG</div><div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{trends.weekly_average}/10</div></div>
+            )}
+            {trends.highest_day && (
+              <div><div style={{ fontSize: '0.75rem', color: 'var(--text-lighter)' }}>BEST DAY</div><div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#22c55e' }}>{new Date(trends.highest_day.date).toLocaleDateString()} ({trends.highest_day.avg_score})</div></div>
+            )}
+            {trends.lowest_day && (
+              <div><div style={{ fontSize: '0.75rem', color: 'var(--text-lighter)' }}>LOWEST DAY</div><div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#ef4444' }}>{new Date(trends.lowest_day.date).toLocaleDateString()} ({trends.lowest_day.avg_score})</div></div>
+            )}
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trends.daily_averages}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => new Date(d).toLocaleDateString('en', { month: 'short', day: 'numeric' })} />
+              <YAxis domain={[1, 10]} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`${v}/10`, 'Mood']} labelFormatter={l => new Date(l).toLocaleDateString()} />
+              <Line type="monotone" dataKey="avg_score" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {moods.length === 0 ? (
         <div className="empty-state">

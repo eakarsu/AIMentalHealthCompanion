@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import pool from '../database.js';
 import auth from '../middleware/auth.js';
+import { detectCrisis, CRISIS_RESOURCES } from '../utils/ai.js';
+import { aiLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -51,7 +53,7 @@ router.post('/sessions', auth, async (req, res) => {
 });
 
 // POST /api/chat/sessions/:id/message
-router.post('/sessions/:id/message', auth, async (req, res) => {
+router.post('/sessions/:id/message', auth, aiLimiter, async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) {
@@ -79,7 +81,7 @@ router.post('/sessions/:id/message', auth, async (req, res) => {
         'HTTP-Referer': 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL,
+        model: 'anthropic/claude-3-5-sonnet-20241022',
         messages: [
           {
             role: 'system',
@@ -90,6 +92,8 @@ router.post('/sessions/:id/message', auth, async (req, res) => {
         ]
       })
     });
+
+    if (!response.ok) throw new Error('AI service error: ' + response.status);
 
     const data = await response.json();
     const aiContent = data.choices?.[0]?.message?.content || 'I apologize, but I am having trouble responding right now. Please try again.';
@@ -102,7 +106,19 @@ router.post('/sessions/:id/message', auth, async (req, res) => {
       [JSON.stringify(updatedMessages), req.params.id]
     );
 
-    res.json({ userMessage, aiMessage });
+    const responsePayload = { userMessage, aiMessage };
+
+    // Crisis detection on user message
+    if (detectCrisis(message)) {
+      await pool.query(
+        'INSERT INTO crisis_alerts (user_id, source, content_snippet) VALUES ($1, $2, $3)',
+        [req.user.id, 'chat', message.substring(0, 200)]
+      );
+      responsePayload.crisis_alert = true;
+      responsePayload.crisis_resources = CRISIS_RESOURCES;
+    }
+
+    res.json(responsePayload);
   } catch (error) {
     console.error('Chat message error:', error);
     res.status(500).json({ error: 'Server error' });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import AIResponseDisplay from '../components/AIResponseDisplay';
+import CrisisAlert from '../components/CrisisAlert';
 import { MessageCircle, Send, Trash2, Bot, User } from 'lucide-react';
 
 export default function ChatPage() {
@@ -9,6 +10,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
+  const [crisisAlert, setCrisisAlert] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -19,7 +21,7 @@ export default function ChatPage() {
 
   const fetchSessions = async () => {
     try {
-      const res = await api.get('/chat');
+      const res = await api.get('/chat/sessions');
       const data = res.data.data || res.data || [];
       setSessions(data);
     } catch (e) { console.error(e); }
@@ -27,7 +29,7 @@ export default function ChatPage() {
 
   const fetchMessages = async (sessionId) => {
     try {
-      const res = await api.get(`/chat/${sessionId}`);
+      const res = await api.get(`/chat/sessions/${sessionId}`);
       const data = res.data.data || res.data;
       setMessages(data.messages || []);
       setCurrentSession(data);
@@ -38,7 +40,7 @@ export default function ChatPage() {
 
   const startNewSession = async () => {
     try {
-      const res = await api.post('/chat', { title: 'New Session' });
+      const res = await api.post('/chat/sessions', { title: 'New Session' });
       const session = res.data.data || res.data;
       setCurrentSession(session);
       setMessages([]);
@@ -58,17 +60,20 @@ export default function ChatPage() {
     try {
       let sessionId = currentSession?.id || currentSession?._id;
       if (!sessionId) {
-        const res = await api.post('/chat', { title: userMsg.substring(0, 50) });
+        const res = await api.post('/chat/sessions', { title: userMsg.substring(0, 50) });
         const session = res.data.data || res.data;
         setCurrentSession(session);
         sessionId = session.id || session._id;
         fetchSessions();
       }
 
-      const res = await api.post(`/chat/${sessionId}/message`, { message: userMsg });
+      const res = await api.post(`/chat/sessions/${sessionId}/message`, { message: userMsg });
       const data = res.data.data || res.data;
-      const aiReply = data.reply || data.response || data.message || data.content || 'I am here for you.';
+      const aiReply = data.aiMessage?.content || data.reply || data.response || data.message || data.content || 'I am here for you.';
       setMessages(prev => [...prev, { role: 'assistant', content: aiReply }]);
+      if (data.crisis_alert) {
+        setCrisisAlert(data.crisis_resources || []);
+      }
     } catch (e) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'I apologize, I encountered an issue. Please try again.' }]);
     }
@@ -78,7 +83,7 @@ export default function ChatPage() {
   const deleteSession = async (id) => {
     if (!confirm('Delete this chat session?')) return;
     try {
-      await api.delete(`/chat/${id}`);
+      await api.delete(`/chat/sessions/${id}`);
       if ((currentSession?.id || currentSession?._id) === id) {
         setCurrentSession(null);
         setMessages([]);
@@ -89,6 +94,7 @@ export default function ChatPage() {
 
   return (
     <div className="page" style={{ maxWidth: 1000, height: 'calc(100vh - 88px)', display: 'flex', gap: 20, padding: '16px 24px' }}>
+      {crisisAlert && <CrisisAlert resources={crisisAlert} />}
       {/* Sidebar */}
       <div style={{
         width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column',
