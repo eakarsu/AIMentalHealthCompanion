@@ -1,3 +1,5 @@
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Sidebar from './components/Sidebar'
@@ -21,6 +23,7 @@ import TherapistPage from './pages/TherapistPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import AIToolsPage from './pages/AIToolsPage'
 import IntegrationsAndCarePage from './pages/IntegrationsAndCarePage'
+import SafetyPlanAdherence from './pages/SafetyPlanAdherence'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -36,6 +39,9 @@ function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/codex/custom-viz" element={<ProtectedRoute><CodexCustomVizFeature /></ProtectedRoute>} />
+        <Route path="/codex/operations" element={<ProtectedRoute><CodexOperationsFeature /></ProtectedRoute>} />
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
@@ -67,6 +73,7 @@ function App() {
           <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/ai-tools" element={<ProtectedRoute><AIToolsPage /></ProtectedRoute>} />
           <Route path="/care-integrations" element={<ProtectedRoute><IntegrationsAndCarePage /></ProtectedRoute>} />
+          <Route path="/safety-plan-adherence" element={<ProtectedRoute><SafetyPlanAdherence /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

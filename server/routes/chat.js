@@ -81,7 +81,7 @@ router.post('/sessions/:id/message', auth, aiLimiter, async (req, res) => {
         'HTTP-Referer': 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3-5-sonnet-20241022',
+        model: process.env.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5',
         messages: [
           {
             role: 'system',
