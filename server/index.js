@@ -30,8 +30,13 @@ import exportRoutes from './routes/exportData.js';
 import secureMessagingRoutes from './routes/secureMessaging.js';
 import anomalyRoutes from './routes/anomaly.js';
 import safetyPlanAdherenceRoutes from './routes/safety-plan-adherence.js';
+import governanceRouter from './governance/router.js';
+import governanceRuntime from './governance/runtime.cjs';
+import providerGateModule from './governance/providerGate.cjs';
 
 import pool from './database.js';
+
+governanceRuntime.validateRuntime();
 
 // === BATCH 05 AUTO-MOUNT imports ===
 import companionAgent247Router from './routes/companion-agent-24-7.js';
@@ -45,11 +50,10 @@ const PORT = process.env.BACKEND_PORT || 3001;
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173').split(',').map((value) => value.trim()).filter(Boolean);
+app.use(cors({ origin:(origin,callback)=>!origin||allowedOrigins.includes(origin)?callback(null,true):callback(new Error('Origin not allowed by CORS')),credentials:true }));
 app.use(express.json({ limit: '10mb' }));
+app.use(providerGateModule.createProviderGate(['/api/ai','/api/chat','/api/companion-agent-24-7','/api/mood-anomaly-stream','/api/cbt-dbt-agent','/api/voice-therapy-access','/api/peer-support-orchestration']));
 
 // Run DB migrations
 async function runMigrations() {
@@ -90,7 +94,7 @@ async function runMigrations() {
   }
 }
 
-runMigrations();
+if (process.env.ENABLE_LEGACY_SCHEMA_BOOTSTRAP === 'true') runMigrations();
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -118,6 +122,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/secure-messages', secureMessagingRoutes);
 app.use('/api/anomaly', anomalyRoutes);
 app.use('/api/safety-plan-adherence', safetyPlanAdherenceRoutes);
+app.use('/api/governed-care-support', governanceRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -149,15 +154,4 @@ app.use('/api/cbt-dbt-agent', cbtDbtAgentRouter);
 app.use('/api/voice-therapy-access', voiceTherapyAccessRouter);
 app.use('/api/peer-support-orchestration', peerSupportOrchestrationRouter);
 
-// === Batch 05 Gaps & Frontend Mounts ===
-try { const _gap_ai_medication_adherence_coach = require('./routes/gap-ai-medication-adherence-coach'); app.use('/api/gap-ai-medication-adherence-coach', _gap_ai_medication_adherence_coach); } catch(e) { console.error('gap mount fail ai-medication-adherence-coach:', e.message); }
-try { const _gap_ai_relapse_risk_detector = require('./routes/gap-ai-relapse-risk-detector'); app.use('/api/gap-ai-relapse-risk-detector', _gap_ai_relapse_risk_detector); } catch(e) { console.error('gap mount fail ai-relapse-risk-detector:', e.message); }
-try { const _gap_ai_cbt_exercise_generator = require('./routes/gap-ai-cbt-exercise-generator'); app.use('/api/gap-ai-cbt-exercise-generator', _gap_ai_cbt_exercise_generator); } catch(e) { console.error('gap mount fail ai-cbt-exercise-generator:', e.message); }
-try { const _gap_ai_group_moderation = require('./routes/gap-ai-group-moderation'); app.use('/api/gap-ai-group-moderation', _gap_ai_group_moderation); } catch(e) { console.error('gap mount fail ai-group-moderation:', e.message); }
-try { const _gap_hipaa_grade = require('./routes/gap-hipaa-grade'); app.use('/api/gap-hipaa-grade', _gap_hipaa_grade); } catch(e) { console.error('gap mount fail hipaa-grade:', e.message); }
-try { const _gap_video = require('./routes/gap-video'); app.use('/api/gap-video', _gap_video); } catch(e) { console.error('gap mount fail video:', e.message); }
-try { const _gap_crisis = require('./routes/gap-crisis'); app.use('/api/gap-crisis', _gap_crisis); } catch(e) { console.error('gap mount fail crisis:', e.message); }
-try { const _gap_wearable = require('./routes/gap-wearable'); app.use('/api/gap-wearable', _gap_wearable); } catch(e) { console.error('gap mount fail wearable:', e.message); }
-try { const _gap_family = require('./routes/gap-family'); app.use('/api/gap-family', _gap_family); } catch(e) { console.error('gap mount fail family:', e.message); }
-try { const _gap_mobile = require('./routes/gap-mobile'); app.use('/api/gap-mobile', _gap_mobile); } catch(e) { console.error('gap mount fail mobile:', e.message); }
-// === End Batch 05 Mounts ===
+// Generated gap routes are quarantined: no mounts until durable provider contracts and acceptance tests exist.

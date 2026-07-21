@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '../.env' });
 
 const auth = (req, res, next) => {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    return res.status(500).json({ error: 'Authentication is not configured' });
+  }
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
