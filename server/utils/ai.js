@@ -2,7 +2,9 @@
  * Shared AI helper for OpenRouter API calls
  */
 export async function getAIResponse(systemPrompt, userMessage) {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  if (!process.env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY is not configured');
+  const baseUrl = (process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -10,7 +12,7 @@ export async function getAIResponse(systemPrompt, userMessage) {
       'HTTP-Referer': 'http://localhost:5173',
     },
     body: JSON.stringify({
-      model: 'anthropic/claude-3-5-sonnet-20241022',
+      model: process.env.OPENROUTER_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
@@ -21,7 +23,9 @@ export async function getAIResponse(systemPrompt, userMessage) {
   if (!response.ok) throw new Error('OpenRouter error: ' + response.status);
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || 'Unable to generate analysis at this time.';
+  const content = data.choices?.[0]?.message?.content;
+  if (!content || !String(content).trim()) throw new Error('OpenRouter returned empty content');
+  return content;
 }
 
 /**

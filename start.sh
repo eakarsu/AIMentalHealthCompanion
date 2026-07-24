@@ -2,11 +2,16 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$PROJECT_DIR"
+require_file() { [ -f "$1" ] || { echo "Missing required file: $1" >&2; exit 1; }; }
+require_file .env
+set -a
+source ./.env
+set +a
 BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 CHILD_PIDS=()
 
-require_file() { [ -f "$1" ] || { echo "Missing required file: $1" >&2; exit 1; }; }
 require_dir() { [ -d "$1" ] || { echo "Missing dependencies: $1 (install explicitly before startup)" >&2; exit 1; }; }
 port_free() {
   if command -v lsof >/dev/null 2>&1 && lsof -ti ":$1" >/dev/null 2>&1; then
@@ -17,16 +22,19 @@ port_free() {
 cleanup() { for pid in "${CHILD_PIDS[@]:-}"; do [ -n "$pid" ] && kill "$pid" 2>/dev/null || true; done; }
 trap cleanup INT TERM EXIT
 
-require_file "$PROJECT_DIR/.env"
 require_dir "$PROJECT_DIR/server/node_modules"
 require_dir "$PROJECT_DIR/client/node_modules"
 port_free "$BACKEND_PORT"
 port_free "$FRONTEND_PORT"
 
+if [[ "${ALLOW_SCHEMA_MIGRATION:-false}" == "true" ]]; then
+  node server/scripts/provisionRuntimeAdmin.js
+fi
+
 (cd "$PROJECT_DIR/server" && BACKEND_PORT="$BACKEND_PORT" node index.js) &
 CHILD_PIDS+=("$!")
-(cd "$PROJECT_DIR/client" && npm run dev -- --port "$FRONTEND_PORT") &
+(cd "$PROJECT_DIR/client" && npm run dev -- --host 127.0.0.1 --port "$FRONTEND_PORT" --strictPort) &
 CHILD_PIDS+=("$!")
 
-echo "Mental-health services started without installing, seeding, migrating, or reclaiming ports."
+echo "Mental-health services started without installing, seeding, or reclaiming ports."
 wait "${CHILD_PIDS[@]}"
