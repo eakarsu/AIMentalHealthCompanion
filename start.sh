@@ -87,7 +87,7 @@ fi
 
 (cd "$PROJECT_DIR/server" && BACKEND_PORT="$BACKEND_PORT" node index.js) &
 CHILD_PIDS+=("$!")
-(cd "$PROJECT_DIR/client" && npm run dev -- --host 127.0.0.1 --port "$FRONTEND_PORT" --strictPort) &
+(cd "$PROJECT_DIR/client" && VITE_API_URL="http://127.0.0.1:$BACKEND_PORT/api" npm run dev -- --host 127.0.0.1 --port "$FRONTEND_PORT" --strictPort) &
 CHILD_PIDS+=("$!")
 
 echo "Mental-health services started without installing, seeding, or reclaiming ports."

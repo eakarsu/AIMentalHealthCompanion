@@ -114,10 +114,10 @@ export default function LoginPage() {
           borderTop: '1px solid var(--border-light)', textAlign: 'center'
         }}>
           <button onClick={quickLogin} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-            <Zap size={18} /> Quick Demo Login
+            <Zap size={18} /> Auto Fill Demo Credentials
           </button>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-lighter)', marginTop: 12 }}>
-            Click "Quick Demo Login" to auto-fill credentials, then sign in
+            Click "Auto Fill Demo Credentials" to auto-fill credentials, then sign in
           </p>
         </div>
       </div>
