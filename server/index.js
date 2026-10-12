@@ -1,3 +1,8 @@
+import aiWorkspaceDependency1 from "./middleware/auth.js";
+import aiWorkspaceDependency2 from "./database.js";
+import aiWorkspaceDependency3 from "./aiWorkspaceAdapters.cjs";
+import aiWorkspaceDependency4 from "./aiWorkspace.cjs";
+import { readFileSync as readAIWorkspaceFile } from 'node:fs';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -49,7 +54,13 @@ const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      scriptSrcAttr: ["'unsafe-inline'"],
+    },
+  },
+}));
 const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173').split(',').map((value) => value.trim()).filter(Boolean);
 app.use(cors({ origin:(origin,callback)=>!origin||allowedOrigins.includes(origin)?callback(null,true):callback(new Error('Origin not allowed by CORS')),credentials:true }));
 app.use(express.json({ limit: '10mb' }));
@@ -130,6 +141,24 @@ app.get('/api/health', (req, res) => {
 });
 
 // 404 handler
+
+// Advisory AI reports only; native execution and approval routes stay unchanged.
+const aiWorkspaceSupport = aiWorkspaceDependency3;
+const aiWorkspaceFeatures = JSON.parse(readAIWorkspaceFile(new URL("./aiWorkspaceFeatures.json", import.meta.url), 'utf8'));
+const aiWorkspaceDatabase = aiWorkspaceDependency2;
+app.use('/api/report-workspace', aiWorkspaceDependency4.createAIWorkspaceRouter({
+  pool: aiWorkspaceDatabase, authenticateToken: aiWorkspaceSupport.verifiedActorAuth(aiWorkspaceDependency1),
+  aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: aiWorkspaceFeatures,
+}));
+// === BATCH 05 AUTO-MOUNT (custom feature suggestions) ===
+app.use('/api/companion-agent-24-7', companionAgent247Router);
+app.use('/api/mood-anomaly-stream', moodAnomalyStreamRouter);
+app.use('/api/cbt-dbt-agent', cbtDbtAgentRouter);
+app.use('/api/voice-therapy-access', voiceTherapyAccessRouter);
+app.use('/api/peer-support-orchestration', peerSupportOrchestrationRouter);
+
+// Generated gap routes are quarantined: no mounts until durable provider contracts and acceptance tests exist.
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
@@ -145,13 +174,3 @@ app.listen(PORT, () => {
 });
 
 export default app;
-
-
-// === BATCH 05 AUTO-MOUNT (custom feature suggestions) ===
-app.use('/api/companion-agent-24-7', companionAgent247Router);
-app.use('/api/mood-anomaly-stream', moodAnomalyStreamRouter);
-app.use('/api/cbt-dbt-agent', cbtDbtAgentRouter);
-app.use('/api/voice-therapy-access', voiceTherapyAccessRouter);
-app.use('/api/peer-support-orchestration', peerSupportOrchestrationRouter);
-
-// Generated gap routes are quarantined: no mounts until durable provider contracts and acceptance tests exist.

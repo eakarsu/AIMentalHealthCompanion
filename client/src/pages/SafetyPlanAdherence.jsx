@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import SampleDataButtons from '../components/SampleDataButtons'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 const splitLines = (value) => value.split('\n').map((item) => item.trim()).filter(Boolean)
@@ -54,6 +55,11 @@ function SafetyPlanAdherence() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
         <form className="card" onSubmit={checkPlan}>
+          <SampleDataButtons samples={[
+            { label: 'Evening check', data: { planName: 'Evening support plan', warningSigns: 'Skipping meals\nIsolating after work', copingSteps: 'Breathing exercise\nText support contact', supportContacts: 'Trusted friend\nTherapist office', environmentRisks: 'Being alone late at night', completedSteps: 'Breathing exercise', moodTrend: 'declining', crisisSignal: false } },
+            { label: 'Weekend review', data: { planName: 'Weekend support plan', warningSigns: 'Staying in bed all morning\nAvoiding messages', copingSteps: 'Take a short walk\nCall support contact', supportContacts: 'Sibling\nCare team', environmentRisks: 'Unstructured time at home', completedSteps: 'Take a short walk', moodTrend: 'stable', crisisSignal: false } },
+            { label: 'Improving routine', data: { planName: 'Daily routine plan', warningSigns: 'Missing meals\nLate-night worry', copingSteps: 'Prepare a meal\nPractice grounding', supportContacts: 'Trusted friend\nCounselor', environmentRisks: 'Poor sleep schedule', completedSteps: 'Prepare a meal\nPractice grounding', moodTrend: 'improving', crisisSignal: false } },
+          ]} onSelect={setForm} />
           <div className="form-group">
             <label>Plan name</label>
             <input value={form.planName} onChange={(e) => update('planName', e.target.value)} />

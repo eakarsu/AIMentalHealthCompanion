@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import api from '../api/axios';
+import AIResponseDisplay from '../components/AIResponseDisplay';
+import { recordList } from '../components/recordList';
 
 const INTEGRATIONS = [
   { key: 'twilio', label: 'Crisis SMS (Twilio)', endpoint: '/integrations/sms/twilio', body: { to: '+15555550100', message: 'Crisis check-in' } },
@@ -86,7 +88,7 @@ function MedicationTab() {
   const load = async () => {
     try {
       const r = await api.get('/medications');
-      setList(r.data.medications || []);
+      setList(recordList(r.data.medications));
     } catch {
       setList([]);
     }
@@ -122,7 +124,7 @@ function NetworkTab() {
   const load = async () => {
     try {
       const r = await api.get('/network');
-      setList(r.data.contacts || []);
+      setList(recordList(r.data.contacts));
     } catch {
       setList([]);
     }
@@ -179,7 +181,7 @@ function MessagesTab() {
   };
   const load = async () => {
     const r = await api.get('/secure-messages');
-    setList(r.data.messages || []);
+    setList(recordList(r.data.messages));
   };
   return (
     <div>
@@ -213,7 +215,7 @@ function AnomalyTab() {
   return (
     <div>
       <button onClick={run} style={{ padding: '4px 10px' }}>Detect mood anomalies</button>
-      {out && <pre style={{ background: '#f5f5f5', padding: 8, marginTop: 12, borderRadius: 4 }}>{JSON.stringify(out, null, 2)}</pre>}
+      {out && <AIResponseDisplay response={out} title="Mood Anomaly Analysis" />}
     </div>
   );
 }

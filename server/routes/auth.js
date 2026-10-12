@@ -7,6 +7,28 @@ import auth from '../middleware/auth.js';
 
 const router = Router();
 
+// Local demo sign-in uses only an existing configured account. No credentials reach the browser.
+router.post('/demo-login', async (req, res) => {
+  if (process.env.NODE_ENV === 'production' || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.ip)) {
+    return res.status(404).json({ error: 'Demo login is unavailable' });
+  }
+  const email = process.env.DEMO_EMAIL;
+  const password = process.env.DEMO_PASSWORD;
+  if (!email || !password) return res.status(503).json({ error: 'Demo account credentials are not configured' });
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const account = result.rows[0];
+    if (!account || !(await bcrypt.compare(password, account.password_hash))) {
+      return res.status(503).json({ error: 'Configured demo account is unavailable' });
+    }
+    const token = jwt.sign({ id: account.id, email: account.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: account.id, email: account.email, name: account.name, created_at: account.created_at } });
+  } catch (error) {
+    console.error('Demo login error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {

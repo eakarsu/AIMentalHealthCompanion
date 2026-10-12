@@ -1,3 +1,4 @@
+import { recordList } from '../components/recordList';
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import DetailModal from '../components/DetailModal';
@@ -21,7 +22,7 @@ export default function AffirmationsPage() {
   const fetchItems = async () => {
     try {
       const res = await api.get('/affirmations');
-      const data = res.data.data || res.data || [];
+      const data = recordList(res.data);
       setItems(data);
       if (data.length > 0) {
         setDailyAffirmation(data[Math.floor(Math.random() * data.length)]);

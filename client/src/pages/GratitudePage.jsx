@@ -1,3 +1,4 @@
+import { recordList } from '../components/recordList';
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import DetailModal from '../components/DetailModal';
@@ -46,7 +47,7 @@ export default function GratitudePage() {
   const fetchItems = async () => {
     try {
       const res = await api.get('/gratitude');
-      setItems(res.data.data || res.data || []);
+      setItems(recordList(res.data));
     } catch (e) { console.error(e); }
     setLoading(false);
   };

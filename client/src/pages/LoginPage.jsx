@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -25,9 +25,17 @@ export default function LoginPage() {
     }
   };
 
-  const quickLogin = () => {
-    setEmail(import.meta.env.VITE_DEMO_EMAIL || '');
-    setPassword(import.meta.env.VITE_DEMO_PASSWORD || '');
+  const quickLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await demoLogin();
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Demo login is unavailable. Sign in with your account.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -113,11 +121,11 @@ export default function LoginPage() {
           marginTop: 20, paddingTop: 20,
           borderTop: '1px solid var(--border-light)', textAlign: 'center'
         }}>
-          <button onClick={quickLogin} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-            <Zap size={18} /> Auto Fill Demo Credentials
+          <button type="button" onClick={quickLogin} disabled={loading} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+            <Zap size={18} /> Log In as Demo
           </button>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-lighter)', marginTop: 12 }}>
-            Click "Auto Fill Demo Credentials" to auto-fill credentials, then sign in
+            Uses the configured local demo account when available.
           </p>
         </div>
       </div>

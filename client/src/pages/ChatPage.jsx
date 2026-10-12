@@ -1,7 +1,9 @@
+import { recordList } from '../components/recordList';
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import AIResponseDisplay from '../components/AIResponseDisplay';
 import CrisisAlert from '../components/CrisisAlert';
+import SampleDataButtons from '../components/SampleDataButtons';
 import { MessageCircle, Send, Trash2, Bot, User } from 'lucide-react';
 
 export default function ChatPage() {
@@ -22,7 +24,7 @@ export default function ChatPage() {
   const fetchSessions = async () => {
     try {
       const res = await api.get('/chat/sessions');
-      const data = res.data.data || res.data || [];
+      const data = recordList(res.data);
       setSessions(data);
     } catch (e) { console.error(e); }
   };
@@ -31,7 +33,7 @@ export default function ChatPage() {
     try {
       const res = await api.get(`/chat/sessions/${sessionId}`);
       const data = res.data.data || res.data;
-      setMessages(data.messages || []);
+      setMessages(recordList(data.messages));
       setCurrentSession(data);
     } catch (e) { console.error(e); }
   };
@@ -228,10 +230,13 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div style={{
-          padding: 16, borderTop: '1px solid var(--border-light)',
-          display: 'flex', gap: 12
-        }}>
+        <div style={{ padding: 16, borderTop: '1px solid var(--border-light)' }}>
+          <SampleDataButtons samples={[
+            { label: 'Anxiety', data: { message: 'I have felt anxious about work this week and would like to talk through one small step I can take today.' } },
+            { label: 'Sleep', data: { message: 'I have been waking up during the night and would like help building a calming evening routine.' } },
+            { label: 'Relationships', data: { message: 'A conversation with someone close to me was difficult, and I want to reflect on my feelings before responding.' } },
+          ]} onSelect={(sample) => setInput(sample.message)} />
+          <div style={{ display: 'flex', gap: 12 }}>
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -243,6 +248,7 @@ export default function ChatPage() {
             style={{ borderRadius: 24, padding: '10px 20px' }}>
             <Send size={18} />
           </button>
+          </div>
         </div>
       </div>
     </div>

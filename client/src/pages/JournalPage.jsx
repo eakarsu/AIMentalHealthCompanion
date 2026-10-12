@@ -1,3 +1,4 @@
+import { recordList } from '../components/recordList';
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import DetailModal from '../components/DetailModal';
@@ -6,81 +7,8 @@ import CrisisAlert from '../components/CrisisAlert';
 import { BookOpen, Plus, Edit, Trash2, ArrowLeft, Sparkles, Brain } from 'lucide-react';
 import SampleDataButtons from '../components/SampleDataButtons';
 
-const SENTIMENT_COLORS = {
-  positive: '#22c55e', negative: '#ef4444', neutral: '#6b7280', mixed: '#f59e0b'
-};
-
 function StructuredAnalysis({ analysis }) {
-  if (!analysis) return null;
-  if (typeof analysis === 'string') return <AIResponseDisplay response={analysis} title="Journal Analysis" />;
-  if (analysis.raw) return <AIResponseDisplay response={analysis.raw} title="Journal Analysis" />;
-
-  const sentimentColor = SENTIMENT_COLORS[analysis.sentiment] || '#6366f1';
-
-  return (
-    <div className="card" style={{ marginTop: 16 }}>
-      <h3 style={{ fontSize: '1rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Sparkles size={18} color="var(--primary)" /> AI Journal Analysis
-      </h3>
-
-      {analysis.sentiment && (
-        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-lighter)', fontWeight: 600 }}>SENTIMENT</span>
-          <span style={{
-            background: `${sentimentColor}22`, color: sentimentColor,
-            border: `1px solid ${sentimentColor}44`,
-            padding: '3px 12px', borderRadius: 20, fontWeight: 700, textTransform: 'capitalize'
-          }}>{analysis.sentiment}</span>
-        </div>
-      )}
-
-      {analysis.overall_tone && (
-        <p style={{ color: 'var(--text-light)', fontStyle: 'italic', marginBottom: 16 }}>{analysis.overall_tone}</p>
-      )}
-
-      {Array.isArray(analysis.cognitive_distortions) && analysis.cognitive_distortions.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 8, color: '#ef4444' }}>Cognitive Distortions</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {analysis.cognitive_distortions.map((d, i) => (
-              <span key={i} style={{
-                background: '#fee2e2', color: '#dc2626',
-                padding: '2px 10px', borderRadius: 12, fontSize: '0.82rem'
-              }}>{typeof d === 'string' ? d : d.name || JSON.stringify(d)}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {Array.isArray(analysis.strengths_observed) && analysis.strengths_observed.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 8, color: '#22c55e' }}>Strengths Observed</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {analysis.strengths_observed.map((s, i) => (
-              <span key={i} style={{
-                background: '#dcfce7', color: '#16a34a',
-                padding: '2px 10px', borderRadius: 12, fontSize: '0.82rem'
-              }}>{s}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {Array.isArray(analysis.gentle_suggestions) && analysis.gentle_suggestions.length > 0 && (
-        <div>
-          <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 8, color: 'var(--primary)' }}>Gentle Suggestions</div>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {analysis.gentle_suggestions.map((s, i) => (
-              <li key={i} style={{ marginBottom: 6, fontSize: '0.9rem', color: 'var(--text-light)', listStyle: 'none', paddingLeft: 4 }}>
-                <input type="checkbox" style={{ marginRight: 8 }} readOnly />
-                {s}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
+  return <AIResponseDisplay response={analysis} title="Journal Analysis" />;
 }
 
 function CBTRecordForm({ onClose, onSaved }) {
@@ -99,35 +27,9 @@ function CBTRecordForm({ onClose, onSaved }) {
   };
 
   if (result) {
-    const a = result.analysis;
     return (
       <div>
-        <h4 style={{ color: 'var(--primary)', marginBottom: 12 }}>CBT Analysis</h4>
-        {a && (
-          <>
-            {Array.isArray(a.cognitive_distortions) && a.cognitive_distortions.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, marginBottom: 6, fontSize: '0.85rem' }}>Cognitive Distortions Found:</div>
-                {a.cognitive_distortions.map((d, i) => (
-                  <div key={i} style={{ background: '#fee2e2', color: '#dc2626', padding: '6px 12px', borderRadius: 8, marginBottom: 4, fontSize: '0.88rem' }}>
-                    <strong>{d.name}:</strong> {d.explanation}
-                  </div>
-                ))}
-              </div>
-            )}
-            {a.balanced_thought && (
-              <div style={{ background: '#dcfce7', color: '#16a34a', padding: 12, borderRadius: 8, marginBottom: 8 }}>
-                <strong>Balanced Thought:</strong> {a.balanced_thought}
-              </div>
-            )}
-            {a.reality_check && <p style={{ fontSize: '0.9rem', marginBottom: 8 }}><strong>Reality Check:</strong> {a.reality_check}</p>}
-            {a.affirmation && (
-              <div style={{ background: 'var(--lavender-light)', color: 'var(--primary)', padding: 12, borderRadius: 8, fontStyle: 'italic' }}>
-                {a.affirmation}
-              </div>
-            )}
-          </>
-        )}
+        <AIResponseDisplay response={result.analysis ?? result} title="CBT Analysis" />
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <button className="btn btn-outline" onClick={onClose}>Close</button>
           <button className="btn btn-primary" onClick={() => { onSaved(); onClose(); }}>Done</button>
@@ -138,6 +40,11 @@ function CBTRecordForm({ onClose, onSaved }) {
 
   return (
     <div>
+      <SampleDataButtons samples={[
+        { label: 'Work feedback', data: { situation: 'My manager requested revisions to a presentation.', automatic_thought: 'I made a mistake, so I must be bad at my job.', evidence_for: 'Several slides need more detail.', evidence_against: 'My manager praised the overall direction and offered specific guidance.' } },
+        { label: 'Missed invitation', data: { situation: 'Two friends met for coffee without inviting me.', automatic_thought: 'They do not want to spend time with me.', evidence_for: 'I was not invited to this meetup.', evidence_against: 'We met last week and they have invited me to other plans.' } },
+        { label: 'New class', data: { situation: 'I felt nervous before joining a new exercise class.', automatic_thought: 'Everyone will notice if I cannot keep up.', evidence_for: 'I am still learning the routine.', evidence_against: 'Other beginners were there and the instructor offered modifications.' } },
+      ]} onSelect={setForm} />
       <div className="form-group"><label>Situation</label><textarea value={form.situation} onChange={e => setForm(f => ({ ...f, situation: e.target.value }))} placeholder="Describe the situation..." rows={2} /></div>
       <div className="form-group"><label>Automatic Thought</label><textarea value={form.automatic_thought} onChange={e => setForm(f => ({ ...f, automatic_thought: e.target.value }))} placeholder="What thought came automatically?" rows={2} /></div>
       <div className="form-group"><label>Evidence For this Thought</label><textarea value={form.evidence_for} onChange={e => setForm(f => ({ ...f, evidence_for: e.target.value }))} placeholder="What supports this thought?" rows={2} /></div>
@@ -167,7 +74,7 @@ export default function JournalPage() {
   const fetchEntries = async () => {
     try {
       const res = await api.get('/journal');
-      setEntries(res.data.data || res.data || []);
+      setEntries(recordList(res.data));
     } catch (e) { console.error(e); }
     setLoading(false);
   };

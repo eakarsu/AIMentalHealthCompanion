@@ -1,3 +1,4 @@
+import AIReportLibrary from "./AIReportLibrary";
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -109,6 +110,6 @@ export default function Sidebar() {
           {!collapsed && <span>Logout</span>}
         </button>
       </div>
-    </aside>
+    <AIReportLibrary /></aside>
   );
 }
