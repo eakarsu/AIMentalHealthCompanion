@@ -35,6 +35,7 @@ import exportRoutes from './routes/exportData.js';
 import secureMessagingRoutes from './routes/secureMessaging.js';
 import anomalyRoutes from './routes/anomaly.js';
 import safetyPlanAdherenceRoutes from './routes/safety-plan-adherence.js';
+import tasksFeaturePackRouter from './routes/tasksFeaturePack.js';
 import governanceRouter from './governance/router.js';
 import governanceRuntime from './governance/runtime.cjs';
 import providerGateModule from './governance/providerGate.cjs';
@@ -133,6 +134,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/secure-messages', secureMessagingRoutes);
 app.use('/api/anomaly', anomalyRoutes);
 app.use('/api/safety-plan-adherence', safetyPlanAdherenceRoutes);
+app.use('/api/tasks', tasksFeaturePackRouter.createTasksRouter({ auth: aiWorkspaceDependency1 }));
 app.use('/api/governed-care-support', governanceRouter);
 
 // Health check

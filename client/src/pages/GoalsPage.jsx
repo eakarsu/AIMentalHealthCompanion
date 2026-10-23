@@ -70,7 +70,8 @@ export default function GoalsPage() {
 
   if (selected && !showForm) {
     return (
-      <div className="page detail-view">
+      <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setSelected(null)}>
+        <div className="page detail-view modal-content" role="dialog" aria-modal="true" style={{ background: 'var(--card-bg, #fff)', borderRadius: 16, padding: 24, width: '90%', maxWidth: 720, maxHeight: '88vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div className="detail-header">
           <button className="btn btn-outline btn-sm" onClick={() => { setSelected(null); setAiCoaching(null); }}><ArrowLeft size={16} /> Back</button>
           <div className="detail-actions">
@@ -79,6 +80,7 @@ export default function GoalsPage() {
             </button>
             <button className="btn btn-secondary btn-sm" onClick={() => openEdit(selected)}><Edit size={16} /> Edit</button>
             <button className="btn btn-danger btn-sm" onClick={() => handleDelete(selected.id || selected._id)}><Trash2 size={16} /> Delete</button>
+            <button className="btn btn-outline btn-sm" onClick={() => setSelected(null)}>Cancel</button>
           </div>
         </div>
         <div className="card">
@@ -107,6 +109,7 @@ export default function GoalsPage() {
         </div>
         {analyzing && <div className="loading-container"><div className="spinner"></div><span style={{ marginLeft: 12 }}>Getting AI coaching...</span></div>}
         {aiCoaching && <AIResponseDisplay response={aiCoaching} title="AI Goal Coach" />}
+      </div>
       </div>
     );
   }

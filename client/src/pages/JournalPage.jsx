@@ -132,7 +132,8 @@ export default function JournalPage() {
 
   if (selected && !showForm) {
     return (
-      <div className="page detail-view">
+      <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setSelected(null)}>
+        <div className="page detail-view modal-content" role="dialog" aria-modal="true" style={{ background: 'var(--card-bg, #fff)', borderRadius: 16, padding: 24, width: '90%', maxWidth: 720, maxHeight: '88vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         {crisisAlert && <CrisisAlert resources={crisisAlert} />}
         <div className="detail-header">
           <button className="btn btn-outline btn-sm" onClick={() => { setSelected(null); setAnalysisResult(null); }}>
@@ -170,6 +171,7 @@ export default function JournalPage() {
         {!analysisResult && (selected.ai_analysis || selected.analysis) && (
           <StructuredAnalysis analysis={selected.ai_analysis || selected.analysis} />
         )}
+      </div>
       </div>
     );
   }
